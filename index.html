@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="data/provincia_1.js"></script>
+        <script src="data/1799_comunidadesRel_pjcopiar_2.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-54.48881444733214,-86.92505170998402],[-16.498618388607248,-11.551289469719457]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/qgis2web/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_argenmap_0');
+        map.getPane('pane_argenmap_0').style.zIndex = 400;
+        var layer_argenmap_0 = L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG:3857@png/{z}/{x}/{-y}.png', {
+            pane: 'pane_argenmap_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 18
+        });
+        layer_argenmap_0;
+        map.addLayer(layer_argenmap_0);
+        function pop_provincia_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gid'] !== null ? autolinker.link(String(feature.properties['gid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">entidad</th>\
+                        <td>' + (feature.properties['entidad'] !== null ? autolinker.link(String(feature.properties['entidad']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['objeto'] !== null ? autolinker.link(String(feature.properties['objeto']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fna'] !== null ? autolinker.link(String(feature.properties['fna']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gna'] !== null ? autolinker.link(String(feature.properties['gna']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['nam'] !== null ? autolinker.link(String(feature.properties['nam']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['in1'] !== null ? autolinker.link(String(feature.properties['in1']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fdc'] !== null ? autolinker.link(String(feature.properties['fdc']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sag'] !== null ? autolinker.link(String(feature.properties['sag']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_provincia_1_0() {
+            return {
+                pane: 'pane_provincia_1',
+                opacity: 1,
+                color: 'rgba(110,110,110,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(152,125,183,0.0)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_provincia_1');
+        map.getPane('pane_provincia_1').style.zIndex = 401;
+        map.getPane('pane_provincia_1').style['mix-blend-mode'] = 'normal';
+        var layer_provincia_1 = new L.geoJson(json_provincia_1, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_provincia_1',
+            layerName: 'layer_provincia_1',
+            pane: 'pane_provincia_1',
+            onEachFeature: pop_provincia_1,
+            style: style_provincia_1_0,
+        });
+        bounds_group.addLayer(layer_provincia_1);
+        map.addLayer(layer_provincia_1);
+        function pop_1799_comunidadesRel_pjcopiar_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? autolinker.link(String(feature.properties['Id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Tipo_id'] !== null ? autolinker.link(String(feature.properties['Tipo_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Nombre_com'] !== null ? autolinker.link(String(feature.properties['Nombre_com']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Pueblo'] !== null ? autolinker.link(String(feature.properties['Pueblo']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Provincia'] !== null ? autolinker.link(String(feature.properties['Provincia']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Departamen'] !== null ? autolinker.link(String(feature.properties['Departamen']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Localidad'] !== null ? autolinker.link(String(feature.properties['Localidad']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Paraje/bar'] !== null ? autolinker.link(String(feature.properties['Paraje/bar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Situación'] !== null ? autolinker.link(String(feature.properties['Situación']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Estado_rel'] !== null ? autolinker.link(String(feature.properties['Estado_rel']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Resolució'] !== null ? autolinker.link(String(feature.properties['Resolució']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Con OATYP'] !== null ? autolinker.link(String(feature.properties['Con OATYP']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Ocup_ATyP'] !== null ? autolinker.link(String(feature.properties['Ocup_ATyP']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Reconocimi'] !== null ? autolinker.link(String(feature.properties['Reconocimi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Ocup_recon'] !== null ? autolinker.link(String(feature.properties['Ocup_recon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Estado_Ins'] !== null ? autolinker.link(String(feature.properties['Estado_Ins']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Tipo_inscr'] !== null ? autolinker.link(String(feature.properties['Tipo_inscr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['N°_inscri'] !== null ? autolinker.link(String(feature.properties['N°_inscri']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Fecha_insc'] !== null ? autolinker.link(String(feature.properties['Fecha_insc']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Registro_i'] !== null ? autolinker.link(String(feature.properties['Registro_i']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Fecha'] !== null ? autolinker.link(String(feature.properties['Fecha']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Encuestado'] !== null ? autolinker.link(String(feature.properties['Encuestado']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Pueblo_ref'] !== null ? autolinker.link(String(feature.properties['Pueblo_ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_1799_comunidadesRel_pjcopiar_2_0(feature) {
+            switch(String(feature.properties['Pueblo_ref'])) {
+                case 'Atacama':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Chané':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(112,68,137,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Charrúa':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,76,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Chicha':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(170,255,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Chorote':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,76,115,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Chulupí (Nivaclé)':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,230,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Comechingón':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(168,112,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Corundí':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,230,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Diaguita':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(168,112,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Fiscara':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(68,79,137,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Guaraní':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(170,255,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Guaycurú':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(180,241,99,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Huarpe':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(56,168,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Iogys':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                stroke: false,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,132,168,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kolla':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kolla Atacameño':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(137,137,68,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Lule':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(76,0,115,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Lule Vilela':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(132,0,168,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mapuche':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,112,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mapuche Tehuelche':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(171,205,102,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mbya Guaraní':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,0,169,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Moqoit (Mocoví)':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,170,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Ocloya':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(132,0,168,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Omaguaca':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,212,223,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pilagá':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                stroke: false,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(223,115,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Qom (Toba)':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,77,168,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Quechua':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(168,112,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Ranquel':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(76,0,115,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Sanavirón':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(102,153,205,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Selk´Nam (Onas)':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(137,68,101,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tapiete':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(68,79,137,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tastil':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(137,68,68,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tehuelche':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,85,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tilián':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Toara':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(38,115,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tonokoté':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(76,230,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Vilela':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,127,127,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Wichí':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(112,168,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Yagán':
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,0,76,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+                radius: 3.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(207,214,106,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_1799_comunidadesRel_pjcopiar_2');
+        map.getPane('pane_1799_comunidadesRel_pjcopiar_2').style.zIndex = 402;
+        map.getPane('pane_1799_comunidadesRel_pjcopiar_2').style['mix-blend-mode'] = 'normal';
+        var layer_1799_comunidadesRel_pjcopiar_2 = new L.geoJson(json_1799_comunidadesRel_pjcopiar_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_1799_comunidadesRel_pjcopiar_2',
+            layerName: 'layer_1799_comunidadesRel_pjcopiar_2',
+            pane: 'pane_1799_comunidadesRel_pjcopiar_2',
+            onEachFeature: pop_1799_comunidadesRel_pjcopiar_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_1799_comunidadesRel_pjcopiar_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_1799_comunidadesRel_pjcopiar_2);
+        map.addLayer(layer_1799_comunidadesRel_pjcopiar_2);
+        setBounds();
+        </script>        
+    </body>
+</html>
